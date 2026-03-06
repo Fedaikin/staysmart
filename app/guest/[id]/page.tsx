@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useParams } from "next/navigation";
-import { Wifi, MapPin, FileText, Copy, Check, Building2, Smartphone, Clock, MessageCircle, Phone, Star, ExternalLink, AlertTriangle } from "lucide-react";
+import { Wifi, MapPin, FileText, Copy, Check, Building2, Smartphone, Clock, MessageCircle, Phone, Star, ExternalLink, AlertTriangle, Map, Coffee, ShoppingCart, Pill } from "lucide-react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,11 +21,8 @@ export default function GuestPage() {
   useEffect(() => {
     const fetchProperty = async () => {
       const { data } = await supabase.from("properties").select("*").eq("id", id).single();
-      
       if (data) {
         setProp(data);
-        
-        // МАГИЯ АНАЛИТИКИ: Увеличиваем счетчик, если в этой сессии еще не смотрели
         const viewed = sessionStorage.getItem(`viewed_${id}`);
         if (!viewed) {
           await supabase.rpc('increment_views', { prop_id: id });
@@ -47,6 +44,10 @@ export default function GuestPage() {
       network: "Название сети:",
       password: "Пароль:",
       info: "Памятка для гостя",
+      guideTitle: "Локальный гид",
+      guideCafe: "Кофе и Еда",
+      guideShop: "Супермаркет",
+      guidePharmacy: "Аптека",
       contactHost: "Связаться с владельцем",
       rateUs: "Оцените ваше проживание",
       rateBad: "Нам очень жаль! Пожалуйста, напишите нам напрямую, чтобы мы всё исправили:",
@@ -65,6 +66,10 @@ export default function GuestPage() {
       network: "Network Name:",
       password: "Password:",
       info: "Guest Information",
+      guideTitle: "Local Guide",
+      guideCafe: "Coffee & Dining",
+      guideShop: "Supermarket",
+      guidePharmacy: "Pharmacy",
       contactHost: "Contact Host",
       rateUs: "Rate your stay",
       rateBad: "We are so sorry! Please text us directly so we can fix it:",
@@ -83,6 +88,12 @@ export default function GuestPage() {
   const cleanPhone = prop.host_phone ? prop.host_phone.replace(/\D/g, '') : '';
   const cleanTelegram = prop.host_telegram ? prop.host_telegram.replace('@', '') : '';
   const whatsappMsg = lang === "ru" ? "Здравствуйте! У меня есть замечание по поводу проживания: " : "Hello! I have an issue with my stay: ";
+
+  // Проверяем, есть ли хоть одна рекомендация
+  const hasGuide = prop.guide_cafe || prop.guide_shop || prop.guide_pharmacy;
+
+  // Функция хелпер для перевода рекомендаций
+  const getGuide = (ruText: string, enText: string) => (lang === "en" && enText) ? enText : ruText;
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans pb-24 text-left">
@@ -158,6 +169,42 @@ export default function GuestPage() {
           <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-6 shadow-sm">
             <h3 className="flex items-center gap-2 text-[#8b949e] text-[10px] uppercase tracking-widest font-black mb-4"><FileText size={16} className="text-[#58a6ff]"/> {t.info}</h3>
             <p className="text-[#f0f6fc] text-md leading-relaxed whitespace-pre-wrap font-light italic">{displayInfo}</p>
+          </div>
+        )}
+
+        {/* НОВЫЙ БЛОК: Локальный гид */}
+        {hasGuide && (
+          <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-6 shadow-sm">
+            <h3 className="flex items-center gap-2 text-[#8b949e] text-[10px] uppercase tracking-widest font-black mb-6"><Map size={16} className="text-[#ff7b72]"/> {t.guideTitle}</h3>
+            <div className="space-y-4">
+              {prop.guide_cafe && (
+                <div className="flex gap-4 items-start bg-[#0d1117] p-4 rounded-xl border border-[#30363d]">
+                  <div className="bg-[#21262d] p-2 rounded-lg border border-[#30363d]"><Coffee size={18} className="text-[#ff7b72]"/></div>
+                  <div>
+                    <p className="text-[10px] text-[#8b949e] uppercase font-bold mb-1">{t.guideCafe}</p>
+                    <p className="text-[#f0f6fc] font-medium text-sm leading-tight">{getGuide(prop.guide_cafe, prop.guide_cafe_en)}</p>
+                  </div>
+                </div>
+              )}
+              {prop.guide_shop && (
+                <div className="flex gap-4 items-start bg-[#0d1117] p-4 rounded-xl border border-[#30363d]">
+                  <div className="bg-[#21262d] p-2 rounded-lg border border-[#30363d]"><ShoppingCart size={18} className="text-[#ff7b72]"/></div>
+                  <div>
+                    <p className="text-[10px] text-[#8b949e] uppercase font-bold mb-1">{t.guideShop}</p>
+                    <p className="text-[#f0f6fc] font-medium text-sm leading-tight">{getGuide(prop.guide_shop, prop.guide_shop_en)}</p>
+                  </div>
+                </div>
+              )}
+              {prop.guide_pharmacy && (
+                <div className="flex gap-4 items-start bg-[#0d1117] p-4 rounded-xl border border-[#30363d]">
+                  <div className="bg-[#21262d] p-2 rounded-lg border border-[#30363d]"><Pill size={18} className="text-[#ff7b72]"/></div>
+                  <div>
+                    <p className="text-[10px] text-[#8b949e] uppercase font-bold mb-1">{t.guidePharmacy}</p>
+                    <p className="text-[#f0f6fc] font-medium text-sm leading-tight">{getGuide(prop.guide_pharmacy, prop.guide_pharmacy_en)}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

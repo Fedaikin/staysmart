@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Save, Wifi, MapPin, FileText, Globe, Check, Printer, Clock, MessageCircle, Star } from "lucide-react";
+import { ArrowLeft, Save, Wifi, MapPin, FileText, Globe, Check, Printer, Clock, MessageCircle, Star, Map, Coffee, ShoppingCart, Pill } from "lucide-react";
 import QRCode from "react-qr-code";
 
 const supabase = createClient(
@@ -17,17 +17,11 @@ export default function EditProperty() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [prop, setProp] = useState({
-    name: "",
-    address: "",
-    wifi_name: "",
-    wifi_password: "",
-    check_in_info: "",
-    check_in_info_en: "",
-    check_in_time: "",
-    check_out_time: "",
-    host_phone: "",
-    host_telegram: "",
-    review_link: ""
+    name: "", address: "", wifi_name: "", wifi_password: "", 
+    check_in_info: "", check_in_info_en: "", check_in_time: "", check_out_time: "", 
+    host_phone: "", host_telegram: "", review_link: "",
+    guide_cafe: "", guide_shop: "", guide_pharmacy: "",
+    guide_cafe_en: "", guide_shop_en: "", guide_pharmacy_en: ""
   });
 
   useEffect(() => {
@@ -35,23 +29,15 @@ export default function EditProperty() {
       try {
         const { data, error } = await supabase.from("properties").select("*").eq("id", id).single();
         if (data) setProp({
-          name: data.name || "",
-          address: data.address || "",
-          wifi_name: data.wifi_name || "",
-          wifi_password: data.wifi_password || "",
-          check_in_info: data.check_in_info || "",
-          check_in_info_en: data.check_in_info_en || "",
-          check_in_time: data.check_in_time || "",
-          check_out_time: data.check_out_time || "",
-          host_phone: data.host_phone || "",
-          host_telegram: data.host_telegram || "",
-          review_link: data.review_link || ""
+          name: data.name || "", address: data.address || "", 
+          wifi_name: data.wifi_name || "", wifi_password: data.wifi_password || "",
+          check_in_info: data.check_in_info || "", check_in_info_en: data.check_in_info_en || "",
+          check_in_time: data.check_in_time || "", check_out_time: data.check_out_time || "",
+          host_phone: data.host_phone || "", host_telegram: data.host_telegram || "", review_link: data.review_link || "",
+          guide_cafe: data.guide_cafe || "", guide_shop: data.guide_shop || "", guide_pharmacy: data.guide_pharmacy || "",
+          guide_cafe_en: data.guide_cafe_en || "", guide_shop_en: data.guide_shop_en || "", guide_pharmacy_en: data.guide_pharmacy_en || ""
         });
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+      } catch (err) { console.error(err); } finally { setLoading(false); }
     };
     fetchProperty();
   }, [id]);
@@ -70,8 +56,6 @@ export default function EditProperty() {
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans p-4 md:p-8 text-left">
-      
-      {/* Скрытый блок для печати */}
       <div className="hidden print:flex flex-col items-center justify-center fixed inset-0 bg-white text-black z-50 p-10 text-center">
         <h1 className="text-5xl font-black mb-4 tracking-tight">{prop.name}</h1>
         <p className="text-2xl text-gray-500 mb-12 font-medium">Добро пожаловать!</p>
@@ -90,7 +74,6 @@ export default function EditProperty() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-left">
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Блок: Основные данные */}
             <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 space-y-6 shadow-sm">
               <h3 className="text-[#f0f6fc] font-bold text-lg border-b border-[#30363d] pb-3">Основные данные</h3>
               <div className="space-y-4">
@@ -105,7 +88,6 @@ export default function EditProperty() {
               </div>
             </section>
 
-            {/* Блок: Время заезда и выезда */}
             <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 space-y-6 shadow-sm">
               <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3"><Clock size={18} className="text-[#e3b341]"/> Время заезда и выезда</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -120,7 +102,44 @@ export default function EditProperty() {
               </div>
             </section>
 
-            {/* Блок: Контакты */}
+            {/* НОВЫЙ БЛОК: Локальный гид */}
+            <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 space-y-8 shadow-sm">
+              <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3"><Map size={18} className="text-[#ff7b72]"/> Локальный гид (Рекомендации)</h3>
+              
+              <div className="space-y-4">
+                <h4 className="flex items-center gap-2 text-[#c9d1d9] font-bold text-sm"><Coffee size={16} className="text-[#ff7b72]"/> Где выпить кофе / поесть</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input placeholder="RU: Кофейня 'Зерно' за углом" value={prop.guide_cafe} onChange={(e) => setProp({...prop, guide_cafe: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#ff7b72]" />
+                  <input placeholder="EN: 'Zerno' Coffee Shop around the corner" value={prop.guide_cafe_en} onChange={(e) => setProp({...prop, guide_cafe_en: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#ff7b72]" />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="flex items-center gap-2 text-[#c9d1d9] font-bold text-sm"><ShoppingCart size={16} className="text-[#ff7b72]"/> Ближайший супермаркет</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input placeholder="RU: Пятерочка (до 23:00) в соседнем доме" value={prop.guide_shop} onChange={(e) => setProp({...prop, guide_shop: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#ff7b72]" />
+                  <input placeholder="EN: Supermarket in the next building" value={prop.guide_shop_en} onChange={(e) => setProp({...prop, guide_shop_en: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#ff7b72]" />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="flex items-center gap-2 text-[#c9d1d9] font-bold text-sm"><Pill size={16} className="text-[#ff7b72]"/> Ближайшая аптека</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input placeholder="RU: Аптека 24/7 через дорогу" value={prop.guide_pharmacy} onChange={(e) => setProp({...prop, guide_pharmacy: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#ff7b72]" />
+                  <input placeholder="EN: 24/7 Pharmacy across the street" value={prop.guide_pharmacy_en} onChange={(e) => setProp({...prop, guide_pharmacy_en: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#ff7b72]" />
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 space-y-6 shadow-sm border-l-4 border-l-[#e3b341]">
+              <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3"><Star size={18} className="text-[#e3b341]" fill="currentColor"/> Умные отзывы</h3>
+              <div>
+                  <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">Ссылка на профиль (Авито/Airbnb)</label>
+                  <p className="text-xs text-[#8b949e] mb-3 font-light">Сюда мы отправим гостя, только если он поставит 5 звезд.</p>
+                  <input placeholder="https://www.avito.ru/..." value={prop.review_link} onChange={(e) => setProp({...prop, review_link: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#e3b341] transition-all" />
+              </div>
+            </section>
+
             <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 space-y-6 shadow-sm">
               <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3"><MessageCircle size={18} className="text-[#58a6ff]"/> Контакты для гостя</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -135,17 +154,6 @@ export default function EditProperty() {
               </div>
             </section>
 
-            {/* НОВЫЙ БЛОК: Умные отзывы */}
-            <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 space-y-6 shadow-sm border-l-4 border-l-[#e3b341]">
-              <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3"><Star size={18} className="text-[#e3b341]" fill="currentColor"/> Умные отзывы</h3>
-              <div>
-                  <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">Ссылка на профиль (Авито/Airbnb)</label>
-                  <p className="text-xs text-[#8b949e] mb-3 font-light">Сюда мы отправим гостя, только если он поставит 5 звезд.</p>
-                  <input placeholder="https://www.avito.ru/..." value={prop.review_link} onChange={(e) => setProp({...prop, review_link: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#e3b341] transition-all" />
-              </div>
-            </section>
-
-            {/* Блок: Данные Wi-Fi */}
             <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 space-y-6 shadow-sm">
               <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3"><Wifi size={18} className="text-[#3fb950]"/> Данные Wi-Fi</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -160,7 +168,6 @@ export default function EditProperty() {
               </div>
             </section>
 
-            {/* Блок: Инструкции */}
             <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 shadow-sm space-y-6">
               <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3"><FileText size={18} className="text-[#58a6ff]"/> Памятка для гостя</h3>
               <div>
