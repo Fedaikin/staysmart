@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Save, Wifi, MapPin, FileText, Globe, Check, Printer, Clock, MessageCircle, Star, Map, Coffee, ShoppingCart, Pill } from "lucide-react";
+import { ArrowLeft, Save, Wifi, MapPin, FileText, Globe, Check, Printer, Clock, MessageCircle, Star, Map, Coffee, ShoppingCart, Pill, Image as ImageIcon, Loader2 } from "lucide-react";
 import QRCode from "react-qr-code";
 
 const supabase = createClient(
@@ -16,6 +16,7 @@ export default function EditProperty() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false);
   
   const [prop, setProp] = useState({
     name: "", address: "", wifi_name: "", wifi_password: "", 
@@ -25,7 +26,9 @@ export default function EditProperty() {
     guide_cafe_en: "", guide_shop_en: "", guide_pharmacy_en: "",
     guide_cafe_yandex: "", guide_cafe_google: "",
     guide_shop_yandex: "", guide_shop_google: "",
-    guide_pharmacy_yandex: "", guide_pharmacy_google: ""
+    guide_pharmacy_yandex: "", guide_pharmacy_google: "",
+    image_url: "",
+    address_yandex: "", address_google: ""
   });
 
   useEffect(() => {
@@ -42,14 +45,15 @@ export default function EditProperty() {
           guide_cafe_en: data.guide_cafe_en || "", guide_shop_en: data.guide_shop_en || "", guide_pharmacy_en: data.guide_pharmacy_en || "",
           guide_cafe_yandex: data.guide_cafe_yandex || "", guide_cafe_google: data.guide_cafe_google || "",
           guide_shop_yandex: data.guide_shop_yandex || "", guide_shop_google: data.guide_shop_google || "",
-          guide_pharmacy_yandex: data.guide_pharmacy_yandex || "", guide_pharmacy_google: data.guide_pharmacy_google || ""
+          guide_pharmacy_yandex: data.guide_pharmacy_yandex || "", guide_pharmacy_google: data.guide_pharmacy_google || "",
+          image_url: data.image_url || "",
+          address_yandex: data.address_yandex || "", address_google: data.address_google || ""
         });
       } catch (err) { console.error(err); } finally { setLoading(false); }
     };
     fetchProperty();
   }, [id]);
 
-  // ФУНКЦИЯ АВТОПЕРЕВОДА
   const translateText = async (text: string) => {
     if (!text) return "";
     try {
@@ -58,14 +62,34 @@ export default function EditProperty() {
       return data.responseData.translatedText;
     } catch (e) {
       console.error("Ошибка перевода", e);
-      return text; // Если ошибка - оставляем оригинал
+      return text;
+    }
+  };
+
+  const uploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploadingImg(true);
+      if (!e.target.files || e.target.files.length === 0) return;
+      
+      const file = e.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${id}-${Math.random()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage.from('property_images').upload(fileName, file);
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('property_images').getPublicUrl(fileName);
+      setProp({ ...prop, image_url: data.publicUrl });
+      
+    } catch (error: any) {
+      alert('Ошибка при загрузке: ' + error.message);
+    } finally {
+      setUploadingImg(false);
     }
   };
 
   const handleSave = async () => {
     setSaving(true);
-    
-    // Автоматически переводим русские тексты на английский перед сохранением
     const translated_check_in = await translateText(prop.check_in_info);
     const translated_cafe = await translateText(prop.guide_cafe);
     const translated_shop = await translateText(prop.guide_shop);
@@ -109,14 +133,41 @@ export default function EditProperty() {
             
             <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 space-y-6 shadow-sm">
               <h3 className="text-[#f0f6fc] font-bold text-lg border-b border-[#30363d] pb-3">Основные данные</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="flex items-center gap-2 text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest"><Globe size={14}/> Название объекта</label>
-                  <input value={prop.name} onChange={(e) => setProp({...prop, name: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
+              
+              <div className="flex flex-col md:flex-row gap-6 items-start">
+                <div className="w-full md:w-1/3">
+                  <label className="flex items-center gap-2 text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest"><ImageIcon size={14}/> Обложка</label>
+                  <div className="relative group rounded-xl overflow-hidden border-2 border-dashed border-[#30363d] hover:border-[#58a6ff] transition-all bg-[#0d1117] aspect-video flex flex-col items-center justify-center cursor-pointer">
+                    {prop.image_url ? (
+                      <img src={prop.image_url} alt="Cover" className="w-full h-full object-cover opacity-80 group-hover:opacity-50 transition-opacity" />
+                    ) : (
+                      <div className="flex flex-col items-center p-4 text-[#8b949e] group-hover:text-[#58a6ff]">
+                        <ImageIcon size={24} className="mb-2" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-center">Загрузить фото</span>
+                      </div>
+                    )}
+                    {uploadingImg && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <Loader2 className="animate-spin text-white" size={24} />
+                      </div>
+                    )}
+                    <input type="file" accept="image/*" onChange={uploadImage} disabled={uploadingImg} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                  </div>
                 </div>
-                <div>
-                  <label className="flex items-center gap-2 text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest"><MapPin size={14}/> Точный адрес</label>
-                  <input value={prop.address} onChange={(e) => setProp({...prop, address: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
+
+                <div className="w-full md:w-2/3 space-y-4">
+                  <div>
+                    <label className="flex items-center gap-2 text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest"><Globe size={14}/> Название объекта</label>
+                    <input value={prop.name} onChange={(e) => setProp({...prop, name: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-2 text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest"><MapPin size={14}/> Точный адрес</label>
+                    <input placeholder="Напр: Невский проспект, 10" value={prop.address} onChange={(e) => setProp({...prop, address: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff] mb-2" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <input placeholder="Ссылка на Яндекс Карты..." value={prop.address_yandex} onChange={(e) => setProp({...prop, address_yandex: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-4 py-2 text-[#8b949e] focus:text-white outline-none focus:border-[#58a6ff] text-xs" />
+                      <input placeholder="Ссылка на Google Карты..." value={prop.address_google} onChange={(e) => setProp({...prop, address_google: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-4 py-2 text-[#8b949e] focus:text-white outline-none focus:border-[#58a6ff] text-xs" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
@@ -135,7 +186,6 @@ export default function EditProperty() {
               </div>
             </section>
 
-            {/* БЛОК: Локальный гид с ссылками */}
             <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 space-y-8 shadow-sm">
               <div className="border-b border-[#30363d] pb-3">
                 <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc]"><Map size={18} className="text-[#ff7b72]"/> Локальный гид</h3>
@@ -170,7 +220,6 @@ export default function EditProperty() {
               </div>
             </section>
 
-            {/* Остальные блоки: Контакты, Wi-Fi, Отзывы, Инструкция */}
             <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 space-y-6 shadow-sm">
               <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3"><MessageCircle size={18} className="text-[#58a6ff]"/> Контакты для гостя</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

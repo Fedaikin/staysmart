@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useParams } from "next/navigation";
-import { Wifi, MapPin, FileText, Copy, Check, Building2, Smartphone, Clock, MessageCircle, Phone, Star, ExternalLink, AlertTriangle, Map, Coffee, ShoppingCart, Pill } from "lucide-react";
+import { Wifi, MapPin, FileText, Copy, Check, Building2, Smartphone, Clock, MessageCircle, Phone, Star, ExternalLink, AlertTriangle, Map, Coffee, ShoppingCart, Pill, Car } from "lucide-react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -38,6 +38,7 @@ export default function GuestPage() {
     ru: {
       subtitle: "Цифровой консьерж StaySmart",
       address: "Адрес объекта",
+      taxiBtn: "Вызвать Яндекс Go",
       checkIn: "Заезд",
       checkOut: "Выезд",
       wifi: "Бесплатный Wi-Fi",
@@ -60,6 +61,7 @@ export default function GuestPage() {
     en: {
       subtitle: "StaySmart Digital Concierge",
       address: "Property Address",
+      taxiBtn: "Order Yandex Go",
       checkIn: "Check-in",
       checkOut: "Check-out",
       wifi: "Free Wi-Fi",
@@ -91,45 +93,58 @@ export default function GuestPage() {
 
   const hasGuide = prop.guide_cafe || prop.guide_shop || prop.guide_pharmacy;
   const getGuide = (ruText: string, enText: string) => (lang === "en" && enText) ? enText : ruText;
-  
-  // Умный выбор ссылки в зависимости от языка
   const getMapLink = (yandexLink: string, googleLink: string) => lang === "ru" ? yandexLink : googleLink;
 
   const cafeLink = getMapLink(prop.guide_cafe_yandex, prop.guide_cafe_google);
   const shopLink = getMapLink(prop.guide_shop_yandex, prop.guide_shop_google);
   const pharmacyLink = getMapLink(prop.guide_pharmacy_yandex, prop.guide_pharmacy_google);
+  
+  // Ссылка на адрес квартиры
+  const addressLink = getMapLink(prop.address_yandex, prop.address_google);
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans pb-24 text-left">
-      <div className="bg-[#161b22] border-b border-[#30363d] p-8 text-center shadow-lg relative">
-        <div className="absolute top-6 right-6 flex bg-[#0d1117] p-1 rounded-lg border border-[#30363d]">
-          <button onClick={() => setLang("ru")} className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${lang === "ru" ? "bg-[#21262d] text-white shadow-sm" : "text-[#8b949e]"}`}>RU</button>
-          <button onClick={() => setLang("en")} className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${lang === "en" ? "bg-[#21262d] text-white shadow-sm" : "text-[#8b949e]"}`}>EN</button>
+      
+      <div className="relative bg-[#161b22] border-b border-[#30363d] p-8 pt-12 text-center shadow-lg overflow-hidden min-h-[220px] flex flex-col justify-center">
+        {prop.image_url && (
+          <div className="absolute inset-0 z-0">
+            <img src={prop.image_url} alt="Cover" className="w-full h-full object-cover opacity-40 mix-blend-overlay" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-[#0d1117]/60 to-transparent"></div>
+          </div>
+        )}
+
+        <div className="absolute top-6 right-6 flex bg-[#0d1117]/80 backdrop-blur-sm p-1 rounded-lg border border-[#30363d] z-20">
+          <button onClick={() => setLang("ru")} className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${lang === "ru" ? "bg-[#21262d] text-white shadow-sm" : "text-[#8b949e] hover:text-white"}`}>RU</button>
+          <button onClick={() => setLang("en")} className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${lang === "en" ? "bg-[#21262d] text-white shadow-sm" : "text-[#8b949e] hover:text-white"}`}>EN</button>
         </div>
 
-        <div className="bg-[#238636] w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 mt-4 shadow-lg shadow-green-900/20">
-            <Building2 size={32} className="text-white" />
-        </div>
-        <h1 className="text-2xl font-black text-[#f0f6fc] tracking-tight">{prop.name}</h1>
-        <div className="flex items-center justify-center gap-2 mt-2 opacity-50">
-            <Smartphone size={12} />
-            <p className="text-[10px] uppercase tracking-widest font-bold">{t.subtitle}</p>
+        <div className="relative z-10 flex flex-col items-center">
+          {!prop.image_url && (
+            <div className="bg-[#238636] w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 mt-4 shadow-lg shadow-green-900/20">
+                <Building2 size={32} className="text-white" />
+            </div>
+          )}
+          <h1 className="text-3xl font-black text-[#f0f6fc] tracking-tight text-balance shadow-black drop-shadow-lg">{prop.name}</h1>
+          <div className="flex items-center justify-center gap-2 mt-3 opacity-80">
+              <Smartphone size={12} className="text-[#58a6ff]"/>
+              <p className="text-[10px] uppercase tracking-widest font-bold text-[#f0f6fc] drop-shadow-md">{t.subtitle}</p>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-md mx-auto p-6 space-y-6">
+      <div className="max-w-md mx-auto p-6 space-y-6 -mt-4 relative z-20">
         
         {(prop.check_in_time || prop.check_out_time) && (
           <div className="flex gap-4">
             {prop.check_in_time && (
-              <div className="flex-1 bg-[#161b22] border border-[#30363d] rounded-2xl p-4 shadow-sm text-center">
+              <div className="flex-1 bg-[#161b22] border border-[#30363d] rounded-2xl p-4 shadow-xl shadow-black/20 text-center">
                 <Clock size={16} className="mx-auto mb-2 text-[#e3b341]" />
                 <p className="text-[10px] text-[#8b949e] uppercase font-black tracking-widest mb-1">{t.checkIn}</p>
                 <p className="text-[#f0f6fc] font-bold text-lg">{prop.check_in_time}</p>
               </div>
             )}
             {prop.check_out_time && (
-              <div className="flex-1 bg-[#161b22] border border-[#30363d] rounded-2xl p-4 shadow-sm text-center">
+              <div className="flex-1 bg-[#161b22] border border-[#30363d] rounded-2xl p-4 shadow-xl shadow-black/20 text-center">
                 <Clock size={16} className="mx-auto mb-2 text-[#e3b341]" />
                 <p className="text-[10px] text-[#8b949e] uppercase font-black tracking-widest mb-1">{t.checkOut}</p>
                 <p className="text-[#f0f6fc] font-bold text-lg">{prop.check_out_time}</p>
@@ -138,10 +153,26 @@ export default function GuestPage() {
           </div>
         )}
 
+        {/* ОБНОВЛЕННЫЙ БЛОК: Кликабельный адрес и кнопка Такси */}
         {prop.address && (
           <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-6 shadow-sm">
             <h3 className="flex items-center gap-2 text-[#8b949e] text-[10px] uppercase tracking-widest font-black mb-4"><MapPin size={16} className="text-[#f85149]"/> {t.address}</h3>
-            <p className="text-[#f0f6fc] text-xl font-bold leading-tight">{prop.address}</p>
+            
+            <div className="flex flex-col gap-4">
+              {addressLink ? (
+                <a href={addressLink} target="_blank" rel="noreferrer" className="group flex items-center justify-between bg-[#0d1117] border border-[#30363d] p-4 rounded-xl hover:border-[#58a6ff] transition-all">
+                  <p className="text-[#f0f6fc] text-lg font-bold leading-tight group-hover:text-[#58a6ff] transition-colors pr-2">{prop.address}</p>
+                  <ExternalLink size={20} className="text-[#8b949e] group-hover:text-[#58a6ff] flex-shrink-0" />
+                </a>
+              ) : (
+                <p className="text-[#f0f6fc] text-xl font-bold leading-tight">{prop.address}</p>
+              )}
+
+              {/* Универсальная кнопка Яндекс Такси с подстановкой адреса */}
+              <a href={`https://taxi.yandex.ru/?end-text=${encodeURIComponent(prop.address)}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 bg-[#FFCC00] hover:bg-[#F2C200] text-black py-4 rounded-xl font-bold transition-all active:scale-95 shadow-md">
+                <Car size={20} /> {t.taxiBtn}
+              </a>
+            </div>
           </div>
         )}
 
