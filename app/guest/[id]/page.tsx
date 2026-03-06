@@ -50,8 +50,8 @@ export default function GuestPage() {
       guidePharmacy: "Аптека",
       contactHost: "Связаться с владельцем",
       rateUs: "Оцените ваше проживание",
-      rateBad: "Нам очень жаль! Пожалуйста, напишите нам напрямую, чтобы мы всё исправили:",
-      rateGood: "Спасибо за высший балл! Будем очень признательны, если вы оставите отзыв:",
+      rateBad: "Нам очень жаль! Напишите нам напрямую, чтобы мы всё исправили:",
+      rateGood: "Спасибо за высший балл! Будем признательны за отзыв:",
       btnBad: "Написать о проблеме",
       btnGood: "Оставить отзыв",
       notFound: "Объект не найден",
@@ -73,7 +73,7 @@ export default function GuestPage() {
       contactHost: "Contact Host",
       rateUs: "Rate your stay",
       rateBad: "We are so sorry! Please text us directly so we can fix it:",
-      rateGood: "Thank you for 5 stars! We would appreciate if you leave a review:",
+      rateGood: "Thank you for 5 stars! We would appreciate a review:",
       btnBad: "Report an issue",
       btnGood: "Leave a review",
       notFound: "Property not found",
@@ -89,11 +89,15 @@ export default function GuestPage() {
   const cleanTelegram = prop.host_telegram ? prop.host_telegram.replace('@', '') : '';
   const whatsappMsg = lang === "ru" ? "Здравствуйте! У меня есть замечание по поводу проживания: " : "Hello! I have an issue with my stay: ";
 
-  // Проверяем, есть ли хоть одна рекомендация
   const hasGuide = prop.guide_cafe || prop.guide_shop || prop.guide_pharmacy;
-
-  // Функция хелпер для перевода рекомендаций
   const getGuide = (ruText: string, enText: string) => (lang === "en" && enText) ? enText : ruText;
+  
+  // Умный выбор ссылки в зависимости от языка
+  const getMapLink = (yandexLink: string, googleLink: string) => lang === "ru" ? yandexLink : googleLink;
+
+  const cafeLink = getMapLink(prop.guide_cafe_yandex, prop.guide_cafe_google);
+  const shopLink = getMapLink(prop.guide_shop_yandex, prop.guide_shop_google);
+  const pharmacyLink = getMapLink(prop.guide_pharmacy_yandex, prop.guide_pharmacy_google);
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans pb-24 text-left">
@@ -141,11 +145,47 @@ export default function GuestPage() {
           </div>
         )}
 
+        {hasGuide && (
+          <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-6 shadow-sm">
+            <h3 className="flex items-center gap-2 text-[#8b949e] text-[10px] uppercase tracking-widest font-black mb-6"><Map size={16} className="text-[#ff7b72]"/> {t.guideTitle}</h3>
+            <div className="space-y-4">
+              {prop.guide_cafe && (
+                <a href={cafeLink || "#"} target={cafeLink ? "_blank" : "_self"} className={`flex gap-4 items-center bg-[#0d1117] p-4 rounded-xl border border-[#30363d] transition-all group ${cafeLink ? "hover:border-[#ff7b72]" : ""}`}>
+                  <div className="bg-[#21262d] p-3 rounded-xl border border-[#30363d] group-hover:bg-[#ff7b72]/10 transition-colors"><Coffee size={20} className="text-[#ff7b72]"/></div>
+                  <div className="flex-1">
+                    <p className="text-[10px] text-[#8b949e] uppercase font-bold mb-1">{t.guideCafe}</p>
+                    <p className="text-[#f0f6fc] font-bold text-sm leading-tight">{getGuide(prop.guide_cafe, prop.guide_cafe_en)}</p>
+                  </div>
+                  {cafeLink && <ExternalLink size={16} className="text-[#8b949e] opacity-40 group-hover:opacity-100 group-hover:text-[#ff7b72] transition-all" />}
+                </a>
+              )}
+              {prop.guide_shop && (
+                <a href={shopLink || "#"} target={shopLink ? "_blank" : "_self"} className={`flex gap-4 items-center bg-[#0d1117] p-4 rounded-xl border border-[#30363d] transition-all group ${shopLink ? "hover:border-[#ff7b72]" : ""}`}>
+                  <div className="bg-[#21262d] p-3 rounded-xl border border-[#30363d] group-hover:bg-[#ff7b72]/10 transition-colors"><ShoppingCart size={20} className="text-[#ff7b72]"/></div>
+                  <div className="flex-1">
+                    <p className="text-[10px] text-[#8b949e] uppercase font-bold mb-1">{t.guideShop}</p>
+                    <p className="text-[#f0f6fc] font-bold text-sm leading-tight">{getGuide(prop.guide_shop, prop.guide_shop_en)}</p>
+                  </div>
+                  {shopLink && <ExternalLink size={16} className="text-[#8b949e] opacity-40 group-hover:opacity-100 group-hover:text-[#ff7b72] transition-all" />}
+                </a>
+              )}
+              {prop.guide_pharmacy && (
+                <a href={pharmacyLink || "#"} target={pharmacyLink ? "_blank" : "_self"} className={`flex gap-4 items-center bg-[#0d1117] p-4 rounded-xl border border-[#30363d] transition-all group ${pharmacyLink ? "hover:border-[#ff7b72]" : ""}`}>
+                  <div className="bg-[#21262d] p-3 rounded-xl border border-[#30363d] group-hover:bg-[#ff7b72]/10 transition-colors"><Pill size={20} className="text-[#ff7b72]"/></div>
+                  <div className="flex-1">
+                    <p className="text-[10px] text-[#8b949e] uppercase font-bold mb-1">{t.guidePharmacy}</p>
+                    <p className="text-[#f0f6fc] font-bold text-sm leading-tight">{getGuide(prop.guide_pharmacy, prop.guide_pharmacy_en)}</p>
+                  </div>
+                  {pharmacyLink && <ExternalLink size={16} className="text-[#8b949e] opacity-40 group-hover:opacity-100 group-hover:text-[#ff7b72] transition-all" />}
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
         {(prop.wifi_name || prop.wifi_password) && (
           <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-6 shadow-sm relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 opacity-5">
-                <Wifi size={100} />
-            </div>
+            <div className="absolute -right-4 -top-4 opacity-5"><Wifi size={100} /></div>
             <h3 className="flex items-center gap-2 text-[#8b949e] text-[10px] uppercase tracking-widest font-black mb-6"><Wifi size={16} className="text-[#3fb950]"/> {t.wifi}</h3>
             <div className="space-y-6">
               <div>
@@ -169,42 +209,6 @@ export default function GuestPage() {
           <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-6 shadow-sm">
             <h3 className="flex items-center gap-2 text-[#8b949e] text-[10px] uppercase tracking-widest font-black mb-4"><FileText size={16} className="text-[#58a6ff]"/> {t.info}</h3>
             <p className="text-[#f0f6fc] text-md leading-relaxed whitespace-pre-wrap font-light italic">{displayInfo}</p>
-          </div>
-        )}
-
-        {/* НОВЫЙ БЛОК: Локальный гид */}
-        {hasGuide && (
-          <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-6 shadow-sm">
-            <h3 className="flex items-center gap-2 text-[#8b949e] text-[10px] uppercase tracking-widest font-black mb-6"><Map size={16} className="text-[#ff7b72]"/> {t.guideTitle}</h3>
-            <div className="space-y-4">
-              {prop.guide_cafe && (
-                <div className="flex gap-4 items-start bg-[#0d1117] p-4 rounded-xl border border-[#30363d]">
-                  <div className="bg-[#21262d] p-2 rounded-lg border border-[#30363d]"><Coffee size={18} className="text-[#ff7b72]"/></div>
-                  <div>
-                    <p className="text-[10px] text-[#8b949e] uppercase font-bold mb-1">{t.guideCafe}</p>
-                    <p className="text-[#f0f6fc] font-medium text-sm leading-tight">{getGuide(prop.guide_cafe, prop.guide_cafe_en)}</p>
-                  </div>
-                </div>
-              )}
-              {prop.guide_shop && (
-                <div className="flex gap-4 items-start bg-[#0d1117] p-4 rounded-xl border border-[#30363d]">
-                  <div className="bg-[#21262d] p-2 rounded-lg border border-[#30363d]"><ShoppingCart size={18} className="text-[#ff7b72]"/></div>
-                  <div>
-                    <p className="text-[10px] text-[#8b949e] uppercase font-bold mb-1">{t.guideShop}</p>
-                    <p className="text-[#f0f6fc] font-medium text-sm leading-tight">{getGuide(prop.guide_shop, prop.guide_shop_en)}</p>
-                  </div>
-                </div>
-              )}
-              {prop.guide_pharmacy && (
-                <div className="flex gap-4 items-start bg-[#0d1117] p-4 rounded-xl border border-[#30363d]">
-                  <div className="bg-[#21262d] p-2 rounded-lg border border-[#30363d]"><Pill size={18} className="text-[#ff7b72]"/></div>
-                  <div>
-                    <p className="text-[10px] text-[#8b949e] uppercase font-bold mb-1">{t.guidePharmacy}</p>
-                    <p className="text-[#f0f6fc] font-medium text-sm leading-tight">{getGuide(prop.guide_pharmacy, prop.guide_pharmacy_en)}</p>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         )}
 

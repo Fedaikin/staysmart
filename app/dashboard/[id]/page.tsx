@@ -16,12 +16,16 @@ export default function EditProperty() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  
   const [prop, setProp] = useState({
     name: "", address: "", wifi_name: "", wifi_password: "", 
     check_in_info: "", check_in_info_en: "", check_in_time: "", check_out_time: "", 
     host_phone: "", host_telegram: "", review_link: "",
     guide_cafe: "", guide_shop: "", guide_pharmacy: "",
-    guide_cafe_en: "", guide_shop_en: "", guide_pharmacy_en: ""
+    guide_cafe_en: "", guide_shop_en: "", guide_pharmacy_en: "",
+    guide_cafe_yandex: "", guide_cafe_google: "",
+    guide_shop_yandex: "", guide_shop_google: "",
+    guide_pharmacy_yandex: "", guide_pharmacy_google: ""
   });
 
   useEffect(() => {
@@ -35,16 +39,47 @@ export default function EditProperty() {
           check_in_time: data.check_in_time || "", check_out_time: data.check_out_time || "",
           host_phone: data.host_phone || "", host_telegram: data.host_telegram || "", review_link: data.review_link || "",
           guide_cafe: data.guide_cafe || "", guide_shop: data.guide_shop || "", guide_pharmacy: data.guide_pharmacy || "",
-          guide_cafe_en: data.guide_cafe_en || "", guide_shop_en: data.guide_shop_en || "", guide_pharmacy_en: data.guide_pharmacy_en || ""
+          guide_cafe_en: data.guide_cafe_en || "", guide_shop_en: data.guide_shop_en || "", guide_pharmacy_en: data.guide_pharmacy_en || "",
+          guide_cafe_yandex: data.guide_cafe_yandex || "", guide_cafe_google: data.guide_cafe_google || "",
+          guide_shop_yandex: data.guide_shop_yandex || "", guide_shop_google: data.guide_shop_google || "",
+          guide_pharmacy_yandex: data.guide_pharmacy_yandex || "", guide_pharmacy_google: data.guide_pharmacy_google || ""
         });
       } catch (err) { console.error(err); } finally { setLoading(false); }
     };
     fetchProperty();
   }, [id]);
 
+  // ФУНКЦИЯ АВТОПЕРЕВОДА
+  const translateText = async (text: string) => {
+    if (!text) return "";
+    try {
+      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ru|en`);
+      const data = await res.json();
+      return data.responseData.translatedText;
+    } catch (e) {
+      console.error("Ошибка перевода", e);
+      return text; // Если ошибка - оставляем оригинал
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
-    const { error } = await supabase.from("properties").update(prop).eq("id", id);
+    
+    // Автоматически переводим русские тексты на английский перед сохранением
+    const translated_check_in = await translateText(prop.check_in_info);
+    const translated_cafe = await translateText(prop.guide_cafe);
+    const translated_shop = await translateText(prop.guide_shop);
+    const translated_pharmacy = await translateText(prop.guide_pharmacy);
+
+    const payloadToSave = {
+      ...prop,
+      check_in_info_en: translated_check_in,
+      guide_cafe_en: translated_cafe,
+      guide_shop_en: translated_shop,
+      guide_pharmacy_en: translated_pharmacy
+    };
+
+    const { error } = await supabase.from("properties").update(payloadToSave).eq("id", id);
     if (error) alert("Ошибка: " + error.message);
     else router.push("/dashboard");
     setSaving(false);
@@ -58,12 +93,10 @@ export default function EditProperty() {
     <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans p-4 md:p-8 text-left">
       <div className="hidden print:flex flex-col items-center justify-center fixed inset-0 bg-white text-black z-50 p-10 text-center">
         <h1 className="text-5xl font-black mb-4 tracking-tight">{prop.name}</h1>
-        <p className="text-2xl text-gray-500 mb-12 font-medium">Добро пожаловать!</p>
         <div className="p-8 border-8 border-black rounded-3xl shadow-2xl mb-12">
            {guestUrl && <QRCode size={400} value={guestUrl} viewBox={`0 0 256 256`} />}
         </div>
         <h2 className="text-3xl font-bold mb-4">Наведите камеру смартфона</h2>
-        <p className="text-xl text-gray-600">чтобы подключиться к Wi-Fi и посмотреть инструкции</p>
       </div>
 
       <div className="max-w-5xl mx-auto print:hidden">
@@ -79,11 +112,11 @@ export default function EditProperty() {
               <div className="space-y-4">
                 <div>
                   <label className="flex items-center gap-2 text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest"><Globe size={14}/> Название объекта</label>
-                  <input value={prop.name} onChange={(e) => setProp({...prop, name: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff] transition-all" />
+                  <input value={prop.name} onChange={(e) => setProp({...prop, name: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
                 </div>
                 <div>
                   <label className="flex items-center gap-2 text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest"><MapPin size={14}/> Точный адрес</label>
-                  <input value={prop.address} onChange={(e) => setProp({...prop, address: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff] transition-all" />
+                  <input value={prop.address} onChange={(e) => setProp({...prop, address: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
                 </div>
               </div>
             </section>
@@ -92,64 +125,62 @@ export default function EditProperty() {
               <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3"><Clock size={18} className="text-[#e3b341]"/> Время заезда и выезда</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">Заезд (Check-in)</label>
-                    <input placeholder="Напр: с 14:00" value={prop.check_in_time} onChange={(e) => setProp({...prop, check_in_time: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
+                    <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">Заезд (с 14:00)</label>
+                    <input value={prop.check_in_time} onChange={(e) => setProp({...prop, check_in_time: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
                 </div>
                 <div>
-                    <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">Выезд (Check-out)</label>
-                    <input placeholder="Напр: до 12:00" value={prop.check_out_time} onChange={(e) => setProp({...prop, check_out_time: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
+                    <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">Выезд (до 12:00)</label>
+                    <input value={prop.check_out_time} onChange={(e) => setProp({...prop, check_out_time: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
                 </div>
               </div>
             </section>
 
-            {/* НОВЫЙ БЛОК: Локальный гид */}
+            {/* БЛОК: Локальный гид с ссылками */}
             <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 space-y-8 shadow-sm">
-              <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3"><Map size={18} className="text-[#ff7b72]"/> Локальный гид (Рекомендации)</h3>
+              <div className="border-b border-[#30363d] pb-3">
+                <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc]"><Map size={18} className="text-[#ff7b72]"/> Локальный гид</h3>
+                <p className="text-[#8b949e] text-xs mt-1">Английский текст сгенерируется автоматически.</p>
+              </div>
               
-              <div className="space-y-4">
-                <h4 className="flex items-center gap-2 text-[#c9d1d9] font-bold text-sm"><Coffee size={16} className="text-[#ff7b72]"/> Где выпить кофе / поесть</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input placeholder="RU: Кофейня 'Зерно' за углом" value={prop.guide_cafe} onChange={(e) => setProp({...prop, guide_cafe: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#ff7b72]" />
-                  <input placeholder="EN: 'Zerno' Coffee Shop around the corner" value={prop.guide_cafe_en} onChange={(e) => setProp({...prop, guide_cafe_en: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#ff7b72]" />
+              <div className="space-y-4 bg-[#0d1117] p-5 rounded-xl border border-[#30363d]">
+                <h4 className="flex items-center gap-2 text-[#c9d1d9] font-bold text-sm mb-4"><Coffee size={16} className="text-[#ff7b72]"/> Где выпить кофе / поесть</h4>
+                <input placeholder="Текст (Напр: Кофейня 'Зерно' за углом)" value={prop.guide_cafe} onChange={(e) => setProp({...prop, guide_cafe: e.target.value})} className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2.5 text-white outline-none focus:border-[#ff7b72] mb-2 text-sm" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input placeholder="https://yandex.ru/maps/..." value={prop.guide_cafe_yandex} onChange={(e) => setProp({...prop, guide_cafe_yandex: e.target.value})} className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2 text-white outline-none focus:border-[#ff7b72] text-xs" />
+                  <input placeholder="https://maps.google.com/..." value={prop.guide_cafe_google} onChange={(e) => setProp({...prop, guide_cafe_google: e.target.value})} className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2 text-white outline-none focus:border-[#ff7b72] text-xs" />
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <h4 className="flex items-center gap-2 text-[#c9d1d9] font-bold text-sm"><ShoppingCart size={16} className="text-[#ff7b72]"/> Ближайший супермаркет</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input placeholder="RU: Пятерочка (до 23:00) в соседнем доме" value={prop.guide_shop} onChange={(e) => setProp({...prop, guide_shop: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#ff7b72]" />
-                  <input placeholder="EN: Supermarket in the next building" value={prop.guide_shop_en} onChange={(e) => setProp({...prop, guide_shop_en: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#ff7b72]" />
+              <div className="space-y-4 bg-[#0d1117] p-5 rounded-xl border border-[#30363d]">
+                <h4 className="flex items-center gap-2 text-[#c9d1d9] font-bold text-sm mb-4"><ShoppingCart size={16} className="text-[#ff7b72]"/> Ближайший магазин</h4>
+                <input placeholder="Текст (Напр: Пятерочка в соседнем доме)" value={prop.guide_shop} onChange={(e) => setProp({...prop, guide_shop: e.target.value})} className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2.5 text-white outline-none focus:border-[#ff7b72] mb-2 text-sm" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input placeholder="https://yandex.ru/maps/..." value={prop.guide_shop_yandex} onChange={(e) => setProp({...prop, guide_shop_yandex: e.target.value})} className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2 text-white outline-none focus:border-[#ff7b72] text-xs" />
+                  <input placeholder="https://maps.google.com/..." value={prop.guide_shop_google} onChange={(e) => setProp({...prop, guide_shop_google: e.target.value})} className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2 text-white outline-none focus:border-[#ff7b72] text-xs" />
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <h4 className="flex items-center gap-2 text-[#c9d1d9] font-bold text-sm"><Pill size={16} className="text-[#ff7b72]"/> Ближайшая аптека</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input placeholder="RU: Аптека 24/7 через дорогу" value={prop.guide_pharmacy} onChange={(e) => setProp({...prop, guide_pharmacy: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#ff7b72]" />
-                  <input placeholder="EN: 24/7 Pharmacy across the street" value={prop.guide_pharmacy_en} onChange={(e) => setProp({...prop, guide_pharmacy_en: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#ff7b72]" />
+              <div className="space-y-4 bg-[#0d1117] p-5 rounded-xl border border-[#30363d]">
+                <h4 className="flex items-center gap-2 text-[#c9d1d9] font-bold text-sm mb-4"><Pill size={16} className="text-[#ff7b72]"/> Аптека</h4>
+                <input placeholder="Текст (Напр: Аптека 24/7 через дорогу)" value={prop.guide_pharmacy} onChange={(e) => setProp({...prop, guide_pharmacy: e.target.value})} className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2.5 text-white outline-none focus:border-[#ff7b72] mb-2 text-sm" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input placeholder="https://yandex.ru/maps/..." value={prop.guide_pharmacy_yandex} onChange={(e) => setProp({...prop, guide_pharmacy_yandex: e.target.value})} className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2 text-white outline-none focus:border-[#ff7b72] text-xs" />
+                  <input placeholder="https://maps.google.com/..." value={prop.guide_pharmacy_google} onChange={(e) => setProp({...prop, guide_pharmacy_google: e.target.value})} className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2 text-white outline-none focus:border-[#ff7b72] text-xs" />
                 </div>
               </div>
             </section>
 
-            <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 space-y-6 shadow-sm border-l-4 border-l-[#e3b341]">
-              <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3"><Star size={18} className="text-[#e3b341]" fill="currentColor"/> Умные отзывы</h3>
-              <div>
-                  <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">Ссылка на профиль (Авито/Airbnb)</label>
-                  <p className="text-xs text-[#8b949e] mb-3 font-light">Сюда мы отправим гостя, только если он поставит 5 звезд.</p>
-                  <input placeholder="https://www.avito.ru/..." value={prop.review_link} onChange={(e) => setProp({...prop, review_link: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#e3b341] transition-all" />
-              </div>
-            </section>
-
+            {/* Остальные блоки: Контакты, Wi-Fi, Отзывы, Инструкция */}
             <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 space-y-6 shadow-sm">
               <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3"><MessageCircle size={18} className="text-[#58a6ff]"/> Контакты для гостя</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">Телефон (WhatsApp)</label>
-                    <input placeholder="Напр: +79991234567" value={prop.host_phone} onChange={(e) => setProp({...prop, host_phone: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
+                    <input value={prop.host_phone} onChange={(e) => setProp({...prop, host_phone: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
                 </div>
                 <div>
                     <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">Telegram (без @)</label>
-                    <input placeholder="Напр: stay_smart_host" value={prop.host_telegram} onChange={(e) => setProp({...prop, host_telegram: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
+                    <input value={prop.host_telegram} onChange={(e) => setProp({...prop, host_telegram: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
                 </div>
               </div>
             </section>
@@ -169,27 +200,30 @@ export default function EditProperty() {
             </section>
 
             <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 shadow-sm space-y-6">
-              <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3"><FileText size={18} className="text-[#58a6ff]"/> Памятка для гостя</h3>
-              <div>
-                <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">На русском языке</label>
-                <textarea rows={4} value={prop.check_in_info} onChange={(e) => setProp({...prop, check_in_info: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff] resize-none font-light" placeholder="Напишите здесь всё самое важное..." />
+              <div className="border-b border-[#30363d] pb-3">
+                <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc]"><FileText size={18} className="text-[#58a6ff]"/> Памятка для гостя</h3>
+                <p className="text-[#8b949e] text-xs mt-1">Английский текст сгенерируется автоматически.</p>
               </div>
+              <textarea rows={6} value={prop.check_in_info} onChange={(e) => setProp({...prop, check_in_info: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff] resize-none font-light" placeholder="Напишите здесь всё самое важное..." />
+            </section>
+
+            <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 space-y-6 shadow-sm border-l-4 border-l-[#e3b341]">
+              <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3"><Star size={18} className="text-[#e3b341]" fill="currentColor"/> Умные отзывы</h3>
               <div>
-                <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">На английском языке</label>
-                <textarea rows={4} value={prop.check_in_info_en} onChange={(e) => setProp({...prop, check_in_info_en: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff] resize-none font-light" placeholder="English instructions here..." />
+                  <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">Ссылка на профиль (Авито/Airbnb)</label>
+                  <input placeholder="https://www.avito.ru/..." value={prop.review_link} onChange={(e) => setProp({...prop, review_link: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#e3b341]" />
               </div>
             </section>
 
             <button onClick={handleSave} disabled={saving} className="w-full bg-[#238636] hover:bg-[#2ea043] text-white py-4 rounded-xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 shadow-xl shadow-green-900/10 transition-all active:scale-[0.98] disabled:opacity-50">
-              <Save size={20} /> {saving ? "Сохраняем..." : "Сохранить изменения"}
+              <Save size={20} /> {saving ? "Переводим и сохраняем..." : "Сохранить изменения"}
             </button>
           </div>
 
           <div className="lg:col-span-1">
             <section className="bg-[#161b22] border border-[#30363d] rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-4 sticky top-8">
               <h3 className="text-[#f0f6fc] font-black text-[10px] uppercase flex items-center gap-2 tracking-tight">
-                <div className="bg-[#238636] p-1 rounded-sm"><Check size={10} className="text-white" /></div>
-                QR-код для гостя
+                <div className="bg-[#238636] p-1 rounded-sm"><Check size={10} className="text-white" /></div> QR-код для гостя
               </h3>
               <div className="p-4 bg-white rounded-2xl border-4 border-[#30363d]">
                  {guestUrl && <QRCode size={160} value={guestUrl} viewBox={`0 0 256 256`} />}
