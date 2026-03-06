@@ -52,7 +52,7 @@ export default function Home() {
       {/* Блок преимуществ */}
       <section className="max-w-6xl mx-auto px-4 py-24 border-t border-[#30363d]">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-[#f0f6fc] mb-4">Всё, что нужно хосту</h2>
+          <h2 className="text-3xl font-bold text-[#f0f6fc] mb-4">Всё, что нужно!</h2>
           <p className="text-[#8b949e]">Избавьтесь от рутины и повторяющихся вопросов гостей.</p>
         </div>
 
@@ -62,7 +62,7 @@ export default function Home() {
               <QrCode size={28} className="text-[#f0f6fc]" />
             </div>
             <h3 className="text-xl font-bold text-[#f0f6fc] mb-3">Умные QR-коды</h3>
-            <p className="text-[#8b949e] leading-relaxed font-light">Готовые плакаты для печати. Гостю достаточно навести камеру смартфона, чтобы получить всю информацию о квартире.</p>
+            <p className="text-[#8b949e] leading-relaxed font-light">Готовые QR-коды для печати. Гостю достаточно навести камеру смартфона, чтобы получить всю информацию о квартире.</p>
           </div>
 
           <div className="bg-[#161b22] border border-[#30363d] p-8 rounded-2xl hover:border-[#8b949e] transition-all hover:-translate-y-1 shadow-lg">
@@ -77,7 +77,7 @@ export default function Home() {
             <div className="bg-[#21262d] w-14 h-14 rounded-xl flex items-center justify-center mb-6 border border-[#30363d]">
               <FileText size={28} className="text-[#58a6ff]" />
             </div>
-            <h3 className="text-xl font-bold text-[#f0f6fc] mb-3">Ясные инструкции</h3>
+            <h3 className="text-xl font-bold text-[#f0f6fc] mb-3">Инструкции</h3>
             <p className="text-[#8b949e] leading-relaxed font-light">Добавьте правила дома, коды от домофона и инструкции по бесконтактному заселению в удобном формате.</p>
           </div>
         </div>
