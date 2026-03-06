@@ -28,9 +28,11 @@ export default function Dashboard() {
         }
         setUser(user);
 
+        // МАГИЯ ЗДЕСЬ: Фильтруем объекты строго по ID текущего пользователя
         const { data, error } = await supabase
           .from("properties")
           .select("*")
+          .eq("user_id", user.id) 
           .order("created_at", { ascending: false });
         
         if (error) throw error;
@@ -47,6 +49,8 @@ export default function Dashboard() {
   const addProperty = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName || !user) return;
+    
+    // При создании объекта жестко привязываем его к ID пользователя
     const { data, error } = await supabase
       .from("properties")
       .insert([{ name: newName, user_id: user.id }])
@@ -56,10 +60,11 @@ export default function Dashboard() {
       setProperties([data[0], ...properties]);
       setIsModalOpen(false);
       setNewName("");
+    } else if (error) {
+      alert("Ошибка при создании: " + error.message);
     }
   };
 
-  // НОВАЯ ФУНКЦИЯ: Удаление объекта
   const deleteProperty = async (id: string, name: string) => {
     const isConfirmed = window.confirm(`Вы уверены, что хотите удалить объект "${name}"? Это действие нельзя отменить.`);
     
@@ -72,13 +77,12 @@ export default function Dashboard() {
       if (error) {
         alert("Ошибка при удалении: " + error.message);
       } else {
-        // Убираем удаленный объект из списка на экране
         setProperties(properties.filter(prop => prop.id !== id));
       }
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#0d1117] flex items-center justify-center text-white italic text-sm">Загрузка данных...</div>;
+  if (loading) return <div className="min-h-screen bg-[#0d1117] flex items-center justify-center text-white italic text-sm">Загрузка ваших объектов...</div>;
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans">
@@ -87,15 +91,18 @@ export default function Dashboard() {
           <Building2 size={24} />
           <span className="italic tracking-tight text-lg font-bold">StaySmart</span>
         </div>
-        <button onClick={async () => { await supabase.auth.signOut(); router.push("/login"); }} className="text-[#8b949e] hover:text-[#f85149] p-2 transition-colors">
-          <LogOut size={20} />
-        </button>
+        <div className="flex items-center gap-4">
+          <span className="text-xs text-[#8b949e] hidden md:block">{user.email}</span>
+          <button onClick={async () => { await supabase.auth.signOut(); router.push("/login"); }} className="text-[#8b949e] hover:text-[#f85149] p-2 transition-colors" title="Выйти">
+            <LogOut size={20} />
+          </button>
+        </div>
       </nav>
 
       <main className="max-w-[1200px] mx-auto p-8 text-left">
         <div className="flex justify-between items-center mb-8 border-b border-[#30363d] pb-4">
           <h2 className="text-2xl font-bold text-[#f0f6fc]">Мои объекты</h2>
-          <button onClick={() => setIsModalOpen(true)} className="bg-[#238636] hover:bg-[#2ea043] text-white px-5 py-2 rounded-md text-sm font-bold flex items-center gap-2 transition-all active:scale-95">
+          <button onClick={() => setIsModalOpen(true)} className="bg-[#238636] hover:bg-[#2ea043] text-white px-5 py-2 rounded-md text-sm font-bold flex items-center gap-2 transition-all active:scale-95 shadow-sm shadow-green-900/20">
             <Plus size={18} /> Добавить
           </button>
         </div>
@@ -139,7 +146,7 @@ export default function Dashboard() {
           {properties.length === 0 && (
             <div onClick={() => setIsModalOpen(true)} className="border-2 border-dashed border-[#30363d] rounded-xl flex flex-col items-center justify-center p-8 hover:border-[#8b949e] cursor-pointer transition-colors min-h-[200px]">
               <Plus size={32} className="text-[#8b949e] mb-2" />
-              <span className="text-sm text-[#8b949e] font-medium">Добавьте первую квартиру</span>
+              <span className="text-sm text-[#8b949e] font-medium text-center">У вас пока нет объектов.<br/>Нажмите, чтобы добавить первую квартиру.</span>
             </div>
           )}
         </div>
