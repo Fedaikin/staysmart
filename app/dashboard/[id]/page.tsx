@@ -21,7 +21,8 @@ export default function EditProperty() {
     address: "",
     wifi_name: "",
     wifi_password: "",
-    check_in_info: ""
+    check_in_info: "",
+    check_in_info_en: ""
   });
 
   useEffect(() => {
@@ -33,7 +34,8 @@ export default function EditProperty() {
           address: data.address || "",
           wifi_name: data.wifi_name || "",
           wifi_password: data.wifi_password || "",
-          check_in_info: data.check_in_info || ""
+          check_in_info: data.check_in_info || "",
+          check_in_info_en: data.check_in_info_en || ""
         });
       } catch (err) {
         console.error(err);
@@ -59,26 +61,17 @@ export default function EditProperty() {
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans p-4 md:p-8 text-left">
       
-      {/* === БЛОК ДЛЯ ПРИНТЕРА (Скрыт на экране, виден только при печати) === */}
+      {/* Скрытый блок для печати */}
       <div className="hidden print:flex flex-col items-center justify-center fixed inset-0 bg-white text-black z-50 p-10 text-center">
         <h1 className="text-5xl font-black mb-4 tracking-tight">{prop.name}</h1>
         <p className="text-2xl text-gray-500 mb-12 font-medium">Добро пожаловать!</p>
-        
         <div className="p-8 border-8 border-black rounded-3xl shadow-2xl mb-12">
            {guestUrl && <QRCode size={400} value={guestUrl} viewBox={`0 0 256 256`} />}
         </div>
-        
         <h2 className="text-3xl font-bold mb-4">Наведите камеру смартфона</h2>
         <p className="text-xl text-gray-600">чтобы подключиться к Wi-Fi и посмотреть инструкции по дому</p>
-        
-        <div className="absolute bottom-10 opacity-30 text-sm font-bold tracking-[0.3em] uppercase">
-          Powered by StaySmart
-        </div>
       </div>
-      {/* =================================================================== */}
 
-
-      {/* === ОСНОВНОЙ ИНТЕРФЕЙС (Скрыт при печати) === */}
       <div className="max-w-5xl mx-auto print:hidden">
         <button onClick={() => router.push("/dashboard")} className="flex items-center gap-2 text-[#8b949e] hover:text-[#f0f6fc] mb-8 text-sm font-medium transition-colors">
           <ArrowLeft size={16} /> Вернуться к списку
@@ -105,18 +98,27 @@ export default function EditProperty() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">Сеть</label>
-                    <input placeholder="Напр: StaySmart_Guest" value={prop.wifi_name} onChange={(e) => setProp({...prop, wifi_name: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
+                    <input value={prop.wifi_name} onChange={(e) => setProp({...prop, wifi_name: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
                 </div>
                 <div>
                     <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">Пароль</label>
-                    <input placeholder="Напр: 12345678" value={prop.wifi_password} onChange={(e) => setProp({...prop, wifi_password: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
+                    <input value={prop.wifi_password} onChange={(e) => setProp({...prop, wifi_password: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
                 </div>
               </div>
             </section>
 
-            <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 shadow-sm">
-              <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3 mb-6"><FileText size={18} className="text-[#58a6ff]"/> Памятка для гостя</h3>
-              <textarea rows={6} value={prop.check_in_info} onChange={(e) => setProp({...prop, check_in_info: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff] resize-none font-light" placeholder="Напишите здесь всё самое важное..." />
+            <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 shadow-sm space-y-6">
+              <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc] border-b border-[#30363d] pb-3"><FileText size={18} className="text-[#58a6ff]"/> Памятка для гостя</h3>
+              
+              <div>
+                <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">На русском языке</label>
+                <textarea rows={4} value={prop.check_in_info} onChange={(e) => setProp({...prop, check_in_info: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff] resize-none font-light" placeholder="Напишите здесь всё самое важное..." />
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest text-left">На английском языке</label>
+                <textarea rows={4} value={prop.check_in_info_en} onChange={(e) => setProp({...prop, check_in_info_en: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff] resize-none font-light" placeholder="English instructions here..." />
+              </div>
             </section>
 
             <button onClick={handleSave} disabled={saving} className="w-full bg-[#238636] hover:bg-[#2ea043] text-white py-4 rounded-xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 shadow-xl shadow-green-900/10 transition-all active:scale-[0.98] disabled:opacity-50">
@@ -130,21 +132,11 @@ export default function EditProperty() {
                 <div className="bg-[#238636] p-1 rounded-sm"><Check size={10} className="text-white" /></div>
                 QR-код для гостя
               </h3>
-              
               <div className="p-4 bg-white rounded-2xl border-4 border-[#30363d]">
                  {guestUrl && <QRCode size={160} value={guestUrl} viewBox={`0 0 256 256`} />}
               </div>
-              
-              <p className="text-[10px] text-[#8b949e] font-bold uppercase text-center leading-tight tracking-tighter mb-2">
-                Для размещения в квартире
-              </p>
-
-              {/* Кнопка печати */}
-              <button 
-                onClick={() => window.print()} 
-                className="w-full bg-[#f0f6fc] hover:bg-white text-[#0d1117] py-3 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md"
-              >
-                <Printer size={14} /> Распечатать
+              <button onClick={() => window.print()} className="w-full mt-2 bg-[#f0f6fc] hover:bg-white text-[#0d1117] py-3 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95">
+                <Printer size={14} /> Распечатать плакат
               </button>
             </section>
           </div>
