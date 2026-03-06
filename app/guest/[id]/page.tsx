@@ -16,14 +16,22 @@ export default function GuestPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [lang, setLang] = useState<"ru" | "en">("ru");
-  
-  // Состояние для рейтинга (0 - не выбран, 1-5 звезды)
   const [rating, setRating] = useState(0);
 
   useEffect(() => {
     const fetchProperty = async () => {
       const { data } = await supabase.from("properties").select("*").eq("id", id).single();
-      if (data) setProp(data);
+      
+      if (data) {
+        setProp(data);
+        
+        // МАГИЯ АНАЛИТИКИ: Увеличиваем счетчик, если в этой сессии еще не смотрели
+        const viewed = sessionStorage.getItem(`viewed_${id}`);
+        if (!viewed) {
+          await supabase.rpc('increment_views', { prop_id: id });
+          sessionStorage.setItem(`viewed_${id}`, 'true');
+        }
+      }
       setLoading(false);
     };
     fetchProperty();
@@ -74,11 +82,7 @@ export default function GuestPage() {
   const displayInfo = (lang === "en" && prop.check_in_info_en) ? prop.check_in_info_en : prop.check_in_info;
   const cleanPhone = prop.host_phone ? prop.host_phone.replace(/\D/g, '') : '';
   const cleanTelegram = prop.host_telegram ? prop.host_telegram.replace('@', '') : '';
-
-  // Текст для предзаполненного сообщения в WhatsApp при плохом отзыве
-  const whatsappMsg = lang === "ru" 
-    ? "Здравствуйте! У меня есть замечание по поводу проживания: " 
-    : "Hello! I have an issue with my stay: ";
+  const whatsappMsg = lang === "ru" ? "Здравствуйте! У меня есть замечание по поводу проживания: " : "Hello! I have an issue with my stay: ";
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans pb-24 text-left">
@@ -175,23 +179,15 @@ export default function GuestPage() {
           </div>
         )}
 
-        {/* НОВЫЙ БЛОК: Умные отзывы */}
         <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 shadow-sm text-center mt-8">
             <h3 className="text-[#f0f6fc] font-bold text-lg mb-6">{t.rateUs}</h3>
-            
             <div className="flex justify-center gap-2 mb-6">
                 {[1, 2, 3, 4, 5].map((star) => (
-                    <button 
-                        key={star} 
-                        onClick={() => setRating(star)}
-                        className={`transition-all hover:scale-110 ${rating >= star ? 'text-[#e3b341]' : 'text-[#30363d]'}`}
-                    >
+                    <button key={star} onClick={() => setRating(star)} className={`transition-all hover:scale-110 ${rating >= star ? 'text-[#e3b341]' : 'text-[#30363d]'}`}>
                         <Star size={40} fill={rating >= star ? "currentColor" : "none"} strokeWidth={1.5} />
                     </button>
                 ))}
             </div>
-
-            {/* Логика показа кнопок в зависимости от оценки */}
             {rating > 0 && rating < 5 && prop.host_phone && (
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <p className="text-sm text-[#8b949e] mb-4 font-light">{t.rateBad}</p>
@@ -200,7 +196,6 @@ export default function GuestPage() {
                     </a>
                 </div>
             )}
-
             {rating === 5 && prop.review_link && (
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <p className="text-sm text-[#8b949e] mb-4 font-light">{t.rateGood}</p>

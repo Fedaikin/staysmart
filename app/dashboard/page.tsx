@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
-import { Building2, Plus, LogOut, ExternalLink, Settings, X, Trash2 } from "lucide-react";
+import { Building2, Plus, LogOut, ExternalLink, Settings, X, Trash2, Eye } from "lucide-react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,7 +28,6 @@ export default function Dashboard() {
         }
         setUser(user);
 
-        // МАГИЯ ЗДЕСЬ: Фильтруем объекты строго по ID текущего пользователя
         const { data, error } = await supabase
           .from("properties")
           .select("*")
@@ -50,7 +49,6 @@ export default function Dashboard() {
     e.preventDefault();
     if (!newName || !user) return;
     
-    // При создании объекта жестко привязываем его к ID пользователя
     const { data, error } = await supabase
       .from("properties")
       .insert([{ name: newName, user_id: user.id }])
@@ -69,16 +67,9 @@ export default function Dashboard() {
     const isConfirmed = window.confirm(`Вы уверены, что хотите удалить объект "${name}"? Это действие нельзя отменить.`);
     
     if (isConfirmed) {
-      const { error } = await supabase
-        .from("properties")
-        .delete()
-        .eq("id", id);
-        
-      if (error) {
-        alert("Ошибка при удалении: " + error.message);
-      } else {
-        setProperties(properties.filter(prop => prop.id !== id));
-      }
+      const { error } = await supabase.from("properties").delete().eq("id", id);
+      if (error) alert("Ошибка при удалении: " + error.message);
+      else setProperties(properties.filter(prop => prop.id !== id));
     }
   };
 
@@ -113,12 +104,14 @@ export default function Dashboard() {
               <div className="flex justify-between items-start mb-3">
                 <h3 className="text-[#58a6ff] font-bold text-xl truncate pr-2">{item.name}</h3>
                 <div className="flex items-center gap-3">
+                  
+                  {/* НОВЫЙ БЛОК: Счетчик просмотров */}
+                  <div className="flex items-center gap-1 text-[#8b949e] text-xs font-bold bg-[#0d1117] px-2 py-1 rounded-md border border-[#30363d]" title="Сканирований QR-кода">
+                    <Eye size={14} /> {item.view_count || 0}
+                  </div>
+
                   <span className="bg-[#2386361a] text-[#3fb950] text-[10px] px-2 py-0.5 border border-[#2386364d] rounded-full uppercase font-black">Активен</span>
-                  <button 
-                    onClick={() => deleteProperty(item.id, item.name)} 
-                    className="text-[#8b949e] hover:text-[#f85149] opacity-0 group-hover:opacity-100 transition-all"
-                    title="Удалить объект"
-                  >
+                  <button onClick={() => deleteProperty(item.id, item.name)} className="text-[#8b949e] hover:text-[#f85149] opacity-0 group-hover:opacity-100 transition-all" title="Удалить объект">
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -127,7 +120,6 @@ export default function Dashboard() {
               <p className="text-xs text-[#8b949e] mb-2 italic truncate flex items-center gap-1">
                 {item.address || "Адрес не указан"}
               </p>
-              
               <p className="text-sm text-[#f0f6fc] mb-8 line-clamp-2 h-[40px] opacity-80">
                 {item.check_in_info || "Инструкции для гостя не добавлены..."}
               </p>
