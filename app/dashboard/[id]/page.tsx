@@ -19,7 +19,7 @@ export default function EditProperty() {
   const [uploadingImg, setUploadingImg] = useState(false);
   
   const [prop, setProp] = useState({
-    name: "", address: "", wifi_name: "", wifi_password: "", 
+    name: "", name_en: "", address: "", wifi_name: "", wifi_password: "", 
     check_in_info: "", check_in_info_en: "", check_in_time: "", check_out_time: "", 
     host_phone: "", host_telegram: "", review_link: "",
     guide_cafe: "", guide_shop: "", guide_pharmacy: "",
@@ -36,7 +36,7 @@ export default function EditProperty() {
       try {
         const { data, error } = await supabase.from("properties").select("*").eq("id", id).single();
         if (data) setProp({
-          name: data.name || "", address: data.address || "", 
+          name: data.name || "", name_en: data.name_en || "", address: data.address || "", 
           wifi_name: data.wifi_name || "", wifi_password: data.wifi_password || "",
           check_in_info: data.check_in_info || "", check_in_info_en: data.check_in_info_en || "",
           check_in_time: data.check_in_time || "", check_out_time: data.check_out_time || "",
@@ -54,33 +54,53 @@ export default function EditProperty() {
     fetchProperty();
   }, [id]);
 
-  const translateText = async (text: string) => {
+  const transliterate = (text: string) => {
+    const cyrillicToLatin: Record<string, string> = {
+      'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Ё': 'Yo', 'Ж': 'Zh', 'З': 'Z', 'И': 'I', 'Й': 'Y', 'К': 'K', 'Л': 'L', 'М': 'M', 'Н': 'N', 'О': 'O', 'П': 'P', 'Р': 'R', 'С': 'S', 'Т': 'T', 'У': 'U', 'Ф': 'F', 'Х': 'Kh', 'Ц': 'Ts', 'Ч': 'Ch', 'Ш': 'Sh', 'Щ': 'Shch', 'Ъ': '', 'Ы': 'Y', 'Ь': '', 'Э': 'E', 'Ю': 'Yu', 'Я': 'Ya',
+      'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya'
+    };
+    return text.replace(/[А-яЁё]/g, (char) => cyrillicToLatin[char] || char);
+  };
+
+  const smartTranslate = async (text: string) => {
     if (!text) return "";
+    const regex = /["'«]([^"'»]+)["'»]/g;
+    const matches: string[] = [];
+    
+    const textWithPlaceholders = text.replace(regex, (match, p1) => {
+      matches.push(p1);
+      return ` ZZZ${matches.length - 1}ZZZ `;
+    });
+
+    let translated = textWithPlaceholders;
     try {
-      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ru|en`);
+      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(textWithPlaceholders)}&langpair=ru|en`);
       const data = await res.json();
-      return data.responseData.translatedText;
+      translated = data.responseData.translatedText;
     } catch (e) {
       console.error("Ошибка перевода", e);
-      return text;
     }
+
+    matches.forEach((match, index) => {
+      const translit = transliterate(match);
+      const markerRegex = new RegExp(`\\s*ZZZ${index}ZZZ\\s*`, "g");
+      translated = translated.replace(markerRegex, ` "${translit}" `);
+    });
+
+    return translated.trim();
   };
 
   const uploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploadingImg(true);
       if (!e.target.files || e.target.files.length === 0) return;
-      
       const file = e.target.files[0];
       const fileExt = file.name.split('.').pop();
       const fileName = `${id}-${Math.random()}.${fileExt}`;
-
       const { error: uploadError } = await supabase.storage.from('property_images').upload(fileName, file);
       if (uploadError) throw uploadError;
-
       const { data } = supabase.storage.from('property_images').getPublicUrl(fileName);
       setProp({ ...prop, image_url: data.publicUrl });
-      
     } catch (error: any) {
       alert('Ошибка при загрузке: ' + error.message);
     } finally {
@@ -90,13 +110,17 @@ export default function EditProperty() {
 
   const handleSave = async () => {
     setSaving(true);
-    const translated_check_in = await translateText(prop.check_in_info);
-    const translated_cafe = await translateText(prop.guide_cafe);
-    const translated_shop = await translateText(prop.guide_shop);
-    const translated_pharmacy = await translateText(prop.guide_pharmacy);
+    
+    // ДОБАВИЛИ ПЕРЕВОД НАЗВАНИЯ СЮДА
+    const translated_name = await smartTranslate(prop.name);
+    const translated_check_in = await smartTranslate(prop.check_in_info);
+    const translated_cafe = await smartTranslate(prop.guide_cafe);
+    const translated_shop = await smartTranslate(prop.guide_shop);
+    const translated_pharmacy = await smartTranslate(prop.guide_pharmacy);
 
     const payloadToSave = {
       ...prop,
+      name_en: translated_name,
       check_in_info_en: translated_check_in,
       guide_cafe_en: translated_cafe,
       guide_shop_en: translated_shop,
@@ -110,7 +134,6 @@ export default function EditProperty() {
   };
 
   if (loading) return <div className="min-h-screen bg-[#0d1117] flex items-center justify-center text-white italic">Загрузка данных...</div>;
-
   const guestUrl = typeof window !== "undefined" ? `${window.location.origin}/guest/${id}` : "";
 
   return (
@@ -159,6 +182,7 @@ export default function EditProperty() {
                   <div>
                     <label className="flex items-center gap-2 text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest"><Globe size={14}/> Название объекта</label>
                     <input value={prop.name} onChange={(e) => setProp({...prop, name: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff]" />
+                    <p className="text-[10px] text-[#8b949e] mt-1.5 font-light">Слова в "кавычках" останутся транслитом на англ. версии.</p>
                   </div>
                   <div>
                     <label className="flex items-center gap-2 text-[10px] text-[#8b949e] mb-2 uppercase font-black tracking-widest"><MapPin size={14}/> Точный адрес</label>
@@ -189,7 +213,6 @@ export default function EditProperty() {
             <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 space-y-8 shadow-sm">
               <div className="border-b border-[#30363d] pb-3">
                 <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc]"><Map size={18} className="text-[#ff7b72]"/> Локальный гид</h3>
-                <p className="text-[#8b949e] text-xs mt-1">Английский текст сгенерируется автоматически.</p>
               </div>
               
               <div className="space-y-4 bg-[#0d1117] p-5 rounded-xl border border-[#30363d]">
@@ -203,7 +226,7 @@ export default function EditProperty() {
 
               <div className="space-y-4 bg-[#0d1117] p-5 rounded-xl border border-[#30363d]">
                 <h4 className="flex items-center gap-2 text-[#c9d1d9] font-bold text-sm mb-4"><ShoppingCart size={16} className="text-[#ff7b72]"/> Ближайший магазин</h4>
-                <input placeholder="Текст (Напр: Пятерочка в соседнем доме)" value={prop.guide_shop} onChange={(e) => setProp({...prop, guide_shop: e.target.value})} className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2.5 text-white outline-none focus:border-[#ff7b72] mb-2 text-sm" />
+                <input placeholder="Текст (Напр: Супермаркет «Пятерочка» в соседнем доме)" value={prop.guide_shop} onChange={(e) => setProp({...prop, guide_shop: e.target.value})} className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2.5 text-white outline-none focus:border-[#ff7b72] mb-2 text-sm" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <input placeholder="https://yandex.ru/maps/..." value={prop.guide_shop_yandex} onChange={(e) => setProp({...prop, guide_shop_yandex: e.target.value})} className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2 text-white outline-none focus:border-[#ff7b72] text-xs" />
                   <input placeholder="https://maps.google.com/..." value={prop.guide_shop_google} onChange={(e) => setProp({...prop, guide_shop_google: e.target.value})} className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2 text-white outline-none focus:border-[#ff7b72] text-xs" />
@@ -251,7 +274,6 @@ export default function EditProperty() {
             <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 shadow-sm space-y-6">
               <div className="border-b border-[#30363d] pb-3">
                 <h3 className="flex items-center gap-2 font-bold text-[#f0f6fc]"><FileText size={18} className="text-[#58a6ff]"/> Памятка для гостя</h3>
-                <p className="text-[#8b949e] text-xs mt-1">Английский текст сгенерируется автоматически.</p>
               </div>
               <textarea rows={6} value={prop.check_in_info} onChange={(e) => setProp({...prop, check_in_info: e.target.value})} className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-white outline-none focus:border-[#58a6ff] resize-none font-light" placeholder="Напишите здесь всё самое важное..." />
             </section>

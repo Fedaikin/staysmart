@@ -98,8 +98,6 @@ export default function GuestPage() {
   const cafeLink = getMapLink(prop.guide_cafe_yandex, prop.guide_cafe_google);
   const shopLink = getMapLink(prop.guide_shop_yandex, prop.guide_shop_google);
   const pharmacyLink = getMapLink(prop.guide_pharmacy_yandex, prop.guide_pharmacy_google);
-  
-  // Ссылка на адрес квартиры
   const addressLink = getMapLink(prop.address_yandex, prop.address_google);
 
   return (
@@ -124,7 +122,12 @@ export default function GuestPage() {
                 <Building2 size={32} className="text-white" />
             </div>
           )}
-          <h1 className="text-3xl font-black text-[#f0f6fc] tracking-tight text-balance shadow-black drop-shadow-lg">{prop.name}</h1>
+          
+          {/* ОБНОВЛЕННЫЙ ЗАГОЛОВОК С ПРОВЕРКОЙ ЯЗЫКА */}
+          <h1 className="text-3xl font-black text-[#f0f6fc] tracking-tight text-balance shadow-black drop-shadow-lg">
+            {(lang === "en" && prop.name_en) ? prop.name_en : prop.name}
+          </h1>
+
           <div className="flex items-center justify-center gap-2 mt-3 opacity-80">
               <Smartphone size={12} className="text-[#58a6ff]"/>
               <p className="text-[10px] uppercase tracking-widest font-bold text-[#f0f6fc] drop-shadow-md">{t.subtitle}</p>
@@ -153,7 +156,6 @@ export default function GuestPage() {
           </div>
         )}
 
-        {/* ОБНОВЛЕННЫЙ БЛОК: Кликабельный адрес и кнопка Такси */}
         {prop.address && (
           <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-6 shadow-sm">
             <h3 className="flex items-center gap-2 text-[#8b949e] text-[10px] uppercase tracking-widest font-black mb-4"><MapPin size={16} className="text-[#f85149]"/> {t.address}</h3>
@@ -168,7 +170,6 @@ export default function GuestPage() {
                 <p className="text-[#f0f6fc] text-xl font-bold leading-tight">{prop.address}</p>
               )}
 
-              {/* Универсальная кнопка Яндекс Такси с подстановкой адреса */}
               <a href={`https://taxi.yandex.ru/?end-text=${encodeURIComponent(prop.address)}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 bg-[#FFCC00] hover:bg-[#F2C200] text-black py-4 rounded-xl font-bold transition-all active:scale-95 shadow-md">
                 <Car size={20} /> {t.taxiBtn}
               </a>
