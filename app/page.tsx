@@ -1,5 +1,4 @@
 import Link from "next/link";
-git branch -M mainimport { Building2, QrCode, Wifi, FileText, ArrowRight } from "lucide-react";
 
 export default function Home() {
   return (
